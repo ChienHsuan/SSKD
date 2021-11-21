@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 from .resnet import *
 from .resnet_ibn import *
+from .msanet import *
+from .msanet_pos import *
 
 
 __factory = {
@@ -11,7 +13,9 @@ __factory = {
     'resnet101': resnet101,
     'resnet152': resnet152,
     'resnet_ibn50a': resnet_ibn50a,
-    'resnet_ibn101a': resnet_ibn101a
+    'resnet_ibn101a': resnet_ibn101a,
+    'msanet': msanet,
+    'msanet_pos': msanet_pos
 }
 
 

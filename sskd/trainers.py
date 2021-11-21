@@ -211,11 +211,11 @@ class SSKDTrainer(object):
             target_inputs = data_loader_target.next()
             data_time.update(time.time() - end)
 
-            # process inputs
+            # three augmented view inputs
             inputs_1, inputs_2, inputs_3, targets = self._parse_data(target_inputs)
             
 
-            # forward
+            # models forward
             f_out_t1, p_out_t1 = self.model_1(inputs_1)
             f_out_t2, p_out_t2 = self.model_2(inputs_2)
             f_out_t3, p_out_t3 = self.model_3(inputs_3)
@@ -230,7 +230,7 @@ class SSKDTrainer(object):
             p_out_t2_ema = p_out_t2_ema[:,:self.num_cluster]
             p_out_t3_ema = p_out_t3_ema[:,:self.num_cluster]
 
-
+            # BNM
             target_softmax_1 = F.softmax(p_out_t1, dim=1)
             target_softmax_2 = F.softmax(p_out_t2, dim=1)
             target_softmax_3 = F.softmax(p_out_t3, dim=1)
@@ -244,11 +244,12 @@ class SSKDTrainer(object):
                                     -torch.norm(target_softmax_2_ema,'nuc')/target_softmax_2_ema.shape[0] + \
                                     -torch.norm(target_softmax_3_ema,'nuc')/target_softmax_3_ema.shape[0] 
 
-
+            # peer networks cross entropy loss
             loss_ce_1 = self.criterion_ce(p_out_t1, targets)
             loss_ce_2 = self.criterion_ce(p_out_t2, targets)
             loss_ce_3 = self.criterion_ce(p_out_t3, targets)
 
+            # distillation loss
             loss_ce_soft = self.criterion_ce_soft(p_out_t1, p_out_t2_ema) + self.criterion_ce_soft(p_out_t2, p_out_t3_ema) + \
                             self.criterion_ce_soft(p_out_t3, p_out_t1_ema)
 
@@ -257,9 +258,10 @@ class SSKDTrainer(object):
                             self.criterion_tri_soft(f_out_t3, f_out_t1_ema, targets)
 
 
-            ###################
+            # multi similarity loss
             loss_ms = self.criterion_ms(f_out_t1, targets) + self.criterion_ms(f_out_t2, targets) + self.criterion_ms(f_out_t3, targets)
-            #0.5 3 1.5
+            
+            # total loss
             loss = (loss_ce_1 + loss_ce_2 + loss_ce_3)*(1-weight) + \
                      loss_ce_soft*(weight) + weight_ms*loss_ms + weight_tf * transfer_loss
                                
@@ -269,6 +271,7 @@ class SSKDTrainer(object):
             loss.backward()
             optimizer.step()
 
+            # momentum update
             self._update_ema_variables(self.model_1, self.model_1_ema, self.alpha, epoch*len(data_loader_target)+i)
             self._update_ema_variables(self.model_2, self.model_2_ema, self.alpha, epoch*len(data_loader_target)+i)
             self._update_ema_variables(self.model_3, self.model_3_ema, self.alpha, epoch*len(data_loader_target)+i)

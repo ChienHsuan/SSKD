@@ -3,11 +3,15 @@ import warnings
 
 from .dukemtmc import DukeMTMC
 from .market1501 import Market1501
+from .msmt17 import MSMT17
+from .lab314 import Lab314
 
 
 __factory = {
     'market1501': Market1501,
     'dukemtmc': DukeMTMC,
+    'msmt17': MSMT17,
+    'lab314': Lab314
 }
 
 

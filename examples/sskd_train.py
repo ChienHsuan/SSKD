@@ -31,8 +31,7 @@ from sskd.utils.rerank import compute_jaccard_dist
 start_epoch = best_mAP = 0
 
 def get_data(name, data_dir):
-    root = osp.join(data_dir, name)
-    dataset = datasets.create(name, root)
+    dataset = datasets.create(name, data_dir)
     return dataset
 
 def get_train_loader(dataset, height, width, batch_size, workers,
@@ -138,15 +137,14 @@ def main():
         random.seed(args.seed)
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
-        cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
 
     main_worker(args)
 
 
 def main_worker(args):
     global start_epoch, best_mAP
-
-    cudnn.benchmark = True
 
     sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'))
     print("==========\nArgs:{}\n==========".format(args))
